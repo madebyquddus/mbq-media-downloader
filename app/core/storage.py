@@ -15,22 +15,11 @@ DEFAULTS = dict(folder=downloads_dir(), quality='Best Available', motion=True, t
     template='%(title).120B [%(id)s].%(ext)s')
 
 def data_dir():
-    override = os.environ.get('MBQ_DATA_DIR') or os.environ.get('TANGI_DATA_DIR')
+    override = os.environ.get('MBQ_DATA_DIR')
     parent = Path(os.environ.get('LOCALAPPDATA', Path.home()))
     path = Path(override or parent / 'MBQDownloader')
-    first_launch = not path.exists()
     path.mkdir(parents=True, exist_ok=True)
-    legacy = parent / 'TangiYTDownloader'
-    if first_launch and not override and legacy.exists():
-        import shutil
-        for filename in ('settings.json', 'queue.json'):
-            if (legacy / filename).is_file():
-                shutil.copy2(legacy / filename, path / filename)
-        if (legacy / 'history.sqlite3').is_file():
-            from contextlib import closing
-            with closing(sqlite3.connect(f'file:{(legacy / "history.sqlite3").as_posix()}?mode=ro', uri=True)) as source:
-                with closing(sqlite3.connect(path / 'history.sqlite3')) as target:
-                    source.backup(target)
+
     return path
 
 class Store:
@@ -46,8 +35,7 @@ class Store:
             self.settings.update(json.loads((self.root / 'settings.json').read_text('utf-8')))
         except (OSError, ValueError):
             pass
-        if self.settings['folder'] == str(Path.home() / 'Downloads' / 'Tangi'):
-            self.settings['folder'] = downloads_dir()
+
 
     def save_settings(self, settings):
         self.settings.update(settings)

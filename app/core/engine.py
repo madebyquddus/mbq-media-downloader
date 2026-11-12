@@ -23,8 +23,7 @@ def find_tool(name):
     suffix = '.exe' if os.name == 'nt' else ''
     locations = [data_dir() / 'tools' / name / (name + suffix), ROOT / 'tools' / name / (name + suffix),
                  ROOT / 'tools' / 'ffmpeg' / (name + suffix), ROOT / 'tools' / 'ffmpeg' / 'bin' / (name + suffix)]
-    legacy = Path(os.environ.get('LOCALAPPDATA', Path.home())) / 'TangiYTDownloader' / 'tools'
-    locations += [legacy / name / (name + suffix), legacy / 'ffmpeg' / (name + suffix)]
+
     for path in locations:
         if path.is_file():
             return str(path)

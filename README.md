@@ -1,5 +1,4 @@
-
-<div align="center">
+ <div align="center">
 
 # MBQ Media Downloader
 
@@ -9,346 +8,1128 @@
 ![Platform](https://img.shields.io/badge/Platform-Windows%2010%2F11%20x64-0078D6?logo=windows&logoColor=white)
 ![Status](https://img.shields.io/badge/Status-active-brightgreen)
 
-**A cinematic Windows desktop media downloader.**
+**A Windows desktop media downloader and manager.**
 
-Resolve a link, inspect the real source streams, pick your quality, and keep the
-whole pipeline local. Python + PySide6 for the UI, yt-dlp for extraction, FFmpeg
-for merging and conversion.
+Inspect available media. Select the content and formats you want. Configure your downloads, manage your queue, and keep track of your downloaded media — all from one native desktop application.
 
-> **This repository ships source only.** FFmpeg, ffprobe, yt-dlp and a JavaScript
-> runtime (Deno or Node) are **not** bundled — you install them yourself.
-> See [Requirements](#-requirements-you-provide-the-media-tools).
+**Inspect. Select. Download. Manage.**
 
-Made with ❤️ by [@madebyquddus](https://github.com/madebyquddus).
+Built with Python and PySide6, powered by yt-dlp and FFmpeg.
+
+**Source repository:** No third-party runtime executables are bundled by default. Review the [requirements](#requirements) before installation.
+
+Made with ❤️ by [@madebyquddus](https://github.com/madebyquddus)
 
 </div>
 
-
 ---
 
-## 📸 Screenshots
+## Screenshots
+
+### Dashboard
 
 <p align="center">
-  <img src="docs/screenshots/home.png" alt="MBQ Media Downloader — Home" width="900">
+  <img src="docs/screenshots/sanitized/dashboard.png" alt="MBQ Media Downloader dashboard showing the main desktop interface" width="900">
+</p>
+
+### Download and format selection
+
+<p align="center">
+  <img src="docs/screenshots/sanitized/download.png" alt="MBQ Media Downloader showing media download and format selection" width="900">
+</p>
+
+### YouTube channel workflow
+
+<p align="center">
+  <img src="docs/screenshots/sanitized/yt-channel.png" alt="MBQ Media Downloader showing the YouTube channel media selection interface" width="900">
 </p>
 
 ---
 
-## 📚 Table of Contents
+## Table of Contents
 
-- [Features](#-features)
-- [Requirements (you provide the media tools)](#-requirements-you-provide-the-media-tools)
-- [Quick start (source)](#-quick-start-source)
-- [Using the app](#-using-the-app)
-- [Advanced](#-advanced)
-  - [Exact format selection](#exact-format-selection)
-  - [Advanced yt-dlp options](#advanced-yt-dlp-options)
-  - [Engine updates](#engine-updates)
-- [Building a distributable EXE](#-building-a-distributable-exe)
-- [Testing](#-testing)
-- [Project layout](#-project-layout)
-- [Data locations](#-data-locations)
-- [Troubleshooting](#-troubleshooting)
-- [Contributing](#-contributing)
-- [Roadmap](#-roadmap)
-- [License](#-license)
-
----
-
-## ✨ Features
-
-- **Real source-quality cards** — 8K → 360p, only shown when the stream actually exists in the source. No invented options.
-- **Video + audio, done right** — MP4 / MKV / WebM containers; MP3 / M4A / Opus / WAV audio, high-quality VBR.
-- **Playlists and creator feeds** — resolve an entire YouTube channel or TikTok profile, dedupe Videos vs Shorts, bulk-queue with one click.
-- **Exact format control** — the Advanced tab lists every non-DRM stream with codec, FPS, bitrate and size; pick a video-only + audio-only pair to merge.
-- **Persistent queue** — start / pause / resume / stop-after-current / force-stop / remove / clear. State survives restart; interrupted jobs return to Waiting.
-- **Verified yt-dlp updater** — the Engine page pulls the official Windows x64 release and checks SHA-256 against the same release's manifest before installing.
-- **Browser-session auth** — optionally reuse a local Chrome / Edge / Firefox / Brave session. No passwords are ever collected.
-- **Searchable history + skip archive** — SQLite archive dedupes media you already downloaded.
-- **Local-only data** — everything lives in `%LOCALAPPDATA%\MBQDownloader`; nothing is uploaded anywhere else.
-- **Cinematic Dark / Light UI** — animated signal core, quality-card motion, page fades. Every animation is toggleable.
+- [Overview](#overview)
+- [How MBQ Works](#how-mbq-works)
+- [Core Capabilities](#core-capabilities)
+- [Compatibility](#compatibility)
+- [Architecture](#architecture)
+- [Requirements](#requirements)
+- [Installation](#installation)
+- [Quick Start](#quick-start)
+- [Using the Application](#using-the-application)
+- [Advanced Features](#advanced-features)
+- [Engine Management](#engine-management)
+- [Data Storage](#data-storage)
+- [Building from Source](#building-from-source)
+- [Testing and Verification](#testing-and-verification)
+- [Project Structure](#project-structure)
+- [Troubleshooting](#troubleshooting)
+- [Security and Privacy](#security-and-privacy)
+- [Contributing to MBQ](#contributing-to-mbq)
+- [Upstream Projects and Contributions](#upstream-projects-and-contributions)
+- [Roadmap](#roadmap)
+- [License and Acknowledgements](#license-and-acknowledgements)
 
 ---
 
-## 📦 Requirements (you provide the media tools)
+## Overview
 
-This repository ships source only. Install or provide the following yourself:
+MBQ Media Downloader is a Windows desktop application designed to make online media downloading more organized and controllable.
 
-| Tool | Purpose | Where to get it |
+Rather than treating downloading as a single action, MBQ brings media inspection, selective content selection, format configuration, download execution, queue management, and local history into one graphical workflow.
+
+Many download workflows involve switching between browser pages, command-line options, format identifiers, and separate download tools. MBQ provides a dedicated interface for coordinating those operations.
+
+### The MBQ approach
+
+**Inspect before downloading.**
+
+Analyze a URL to retrieve available media information before committing to a download.
+
+**Choose what you actually need.**
+
+Review available formats, resolutions, and collection entries. Select individual items rather than automatically downloading everything.
+
+**Control the output.**
+
+Choose video or audio output, quality preferences, containers, and supported processing options.
+
+**Manage the entire process.**
+
+Monitor progress, control queued jobs, organize output, and review download history.
+
+MBQ combines its own desktop workflow and application management with established media-processing tools. It does not attempt to replace the underlying extraction and media-processing engines.
+
+---
+
+## How MBQ Works
+
+The application follows a connected workflow:
+
+```text
+        MEDIA URL
+            |
+            v
+      1. DISCOVER
+     Analyze the URL
+            |
+            v
+       2. INSPECT
+   Review media information
+   and available formats
+            |
+            v
+        3. SELECT
+   Choose entries and streams
+            |
+            v
+       4. CONFIGURE
+   Quality, output and options
+            |
+            v
+       5. DOWNLOAD
+   Queue, execute and monitor
+            |
+            v
+        6. MANAGE
+   Files, queue and history
+```
+
+### 1. Discover
+
+Enter one or more HTTP or HTTPS media URLs.
+
+MBQ passes the request to yt-dlp for metadata extraction. Analysis does not itself download the media.
+
+### 2. Inspect
+
+Review the information returned by the extractor, including available formats and media metadata.
+
+For supported collections, entries can initially be loaded as lightweight metadata instead of immediately analyzing every item's formats.
+
+### 3. Select
+
+Choose individual videos, playlist entries, or supported channel/profile items.
+
+This makes it possible to select the content you actually intend to download.
+
+### 4. Configure
+
+Choose the output mode, container, quality preset, or exact stream identifiers where available.
+
+Additional settings control supported metadata, subtitles, thumbnails, chapters, filename templates, and other download preferences.
+
+### 5. Download
+
+Selected items enter the download queue.
+
+MBQ coordinates the jobs and communicates with the media engine while displaying progress and processing states.
+
+### 6. Manage
+
+Control the queue, review completed jobs, open downloaded files, organize playlist output, and search local download history.
+
+---
+
+## Core Capabilities
+
+### Media inspection and extraction
+
+- URL analysis before downloading.
+- Available video and audio format inspection.
+- Source-derived video quality options.
+- Resolution selection from 360p through 8K when matching streams are available.
+- Exact format ID selection.
+- Individual playlist-entry analysis.
+- Supported YouTube channel and TikTok profile workflows.
+- Channel/profile entry selection and filtering.
+
+### Video and audio output
+
+**Video containers**
+
+- MP4
+- MKV
+- WebM
+
+**Audio formats**
+
+- MP3
+- M4A
+- Opus
+- WAV
+
+Output availability depends on the source streams, codecs, extractor information, and FFmpeg processing capabilities.
+
+### Download queue
+
+- Persistent queue storage.
+- Start and pause downloads.
+- Resume paused downloads.
+- Stop after the current task.
+- Force-stop active work.
+- Cancel selected jobs.
+- Retry failed jobs.
+- Move jobs to the top of the queue.
+- Filter and select queue entries.
+- Clear completed jobs.
+
+Pending jobs are restored after an application restart. Interrupted jobs return to the Waiting state.
+
+### Download history
+
+- Local SQLite history database.
+- Searchable download records.
+- Duplicate detection.
+- Option to skip media already recorded as completed.
+- Clear history without deleting downloaded media files.
+
+### Output organization
+
+- Configurable download destination.
+- Playlist-specific folders.
+- Numbered playlist filenames.
+- Windows-compatible filename sanitization.
+- Custom filename templates.
+
+### Application interface
+
+- Native PySide6 desktop interface.
+- Dark and Light themes.
+- Custom MBQ visual interface.
+- Configurable interface animations.
+- Dedicated Home, Downloads, History, Advanced, Engine, and Settings areas.
+
+---
+
+## Compatibility
+
+MBQ uses yt-dlp as its media extraction and downloading engine.
+
+Consequently, website compatibility depends on the extractors maintained by yt-dlp, the website's current implementation, access restrictions, and the external tools available on the system.
+
+The application does not guarantee that every website, URL, account type, or media format will work.
+
+### Specific collection workflows
+
+The application contains dedicated handling for:
+
+- YouTube channels, including Videos and Shorts where supported.
+- TikTok profiles.
+- Playlist entries and selective item downloading.
+
+Other websites may work through yt-dlp's available extractors, but their compatibility is not independently guaranteed by MBQ.
+
+### Important limitations
+
+- Website changes can break extraction without an application update.
+- Some formats require additional JavaScript runtime support.
+- Private or restricted media requires legitimate account access.
+- Geographic restrictions and rate limits may prevent extraction.
+- DRM-protected media is not bypassed.
+- Available output formats depend on the source and processing tools.
+
+For current extractor information, consult the [yt-dlp supported sites documentation](https://github.com/yt-dlp/yt-dlp/blob/master/supportedsites.md).
+
+---
+
+## Architecture
+
+MBQ separates the desktop application workflow from the external media engines.
+
+```mermaid
+flowchart TD
+    A["User"] --> B["MBQ Desktop Interface<br/>Python + PySide6"]
+
+    B --> C["Application Core"]
+    C --> D["Media Inspection"]
+    C --> E["Selection and Format Logic"]
+    C --> F["Download Queue"]
+    C --> G["Settings and History"]
+
+    D --> H["yt-dlp"]
+    E --> H
+    F --> H
+
+    H --> I["FFmpeg"]
+    H --> J["ffprobe"]
+    H --> K["Node.js or Deno"]
+
+    I --> L["Downloaded Media"]
+    J --> H
+
+    G --> M["Local Application Storage<br/>JSON + SQLite"]
+    F --> M
+
+    L --> N["User's Download Folder"]
+```
+
+### Application responsibilities
+
+MBQ implements:
+
+- The graphical desktop experience.
+- URL input and workflow coordination.
+- Media selection and format-selection controls.
+- Quality and output configuration.
+- Download queue orchestration.
+- Progress and status presentation.
+- Application settings.
+- Persistent queue and history management.
+- Engine discovery and yt-dlp update management.
+
+### External component responsibilities
+
+| Component | Responsibility |
+|---|---|
+| Python | Application runtime |
+| PySide6 | Native desktop interface |
+| yt-dlp | Media extraction and downloading |
+| FFmpeg | Merging, remuxing and audio/video processing |
+| ffprobe | Media stream and output inspection |
+| Node.js or Deno | JavaScript runtime support for extraction |
+| SQLite | Local download history |
+
+This separation allows the media engines to be updated independently of the desktop application.
+
+---
+
+## Requirements
+
+MBQ Media Downloader targets **Windows 10/11 x64**.
+
+There are two usage scenarios: running from source and running a packaged folder distribution.
+
+### Required components
+
+| Component | Requirement | Purpose |
 |---|---|---|
-| **Python 3.11+** | Runs the application | https://www.python.org/downloads/ |
-| **FFmpeg + ffprobe** | Merge, remux, audio extraction | https://ffmpeg.org/download.html (Windows builds) |
-| **yt-dlp** | Extraction engine | https://github.com/yt-dlp/yt-dlp/releases |
-| **Deno** *or* **Node.js 22+** | JavaScript runtime (YouTube) | https://deno.com/ · https://nodejs.org/ |
+| Windows | Windows 10/11 x64 | Desktop platform |
+| Python | 3.11 or newer | Source installation |
+| PySide6 | 6.7 or newer | Desktop interface |
+| FFmpeg | Windows x64 | Media processing |
+| ffprobe | Windows x64 | Media inspection |
+| yt-dlp | Python package or standalone Windows executable | Extraction and downloading |
+| Node.js or Deno | Node.js 22+ or supported Deno | JavaScript runtime support |
 
-Provide the native tools in any of three ways:
+A JavaScript runtime is particularly important for full YouTube extraction support. Exact requirements can change as websites and yt-dlp extractors evolve.
 
-1. **Engine page (recommended)** — inside the running app: **Check Engine → Update yt-dlp → Install local FFmpeg files**.
-2. **Place them in `tools/`** — `ffmpeg.exe` + `ffprobe.exe` in `tools/ffmpeg/`, `yt-dlp.exe` in `tools/yt-dlp/`, `node.exe` / `deno.exe` in `tools/node/`. Each folder has a `README.txt` explaining the slot.
-3. **Use your system `PATH`** — the app falls back to `shutil.which()`.
+### Python dependencies
+
+The repository's `requirements.txt` contains:
+
+- `PySide6-Essentials>=6.7,<7`
+- `yt-dlp[default]>=2025.9.26`
+- `pyinstaller>=6.10,<7`
+
+The source installation process installs the yt-dlp Python package automatically.
+
+A separate `yt-dlp.exe` is not required for a normal source installation unless you prefer to use the standalone engine.
+
+### FFmpeg and ffprobe
+
+Both executables are required for downloading and processing media.
+
+You can provide them through:
+
+1. The application's Engine page using **Install local FFmpeg files**.
+2. The project's `tools/ffmpeg/` directory.
+3. Your Windows system `PATH`.
+
+The selected directory for local installation must contain both:
+
+```text
+tools/
+└── ffmpeg/
+    ├── ffmpeg.exe
+    └── ffprobe.exe
+```
+
+The application copies the files you provide. It does not download FFmpeg automatically.
+
+Official resources: [FFmpeg downloads](https://ffmpeg.org/download.html) · [FFmpeg licensing](https://ffmpeg.org/legal.html)
+
+### yt-dlp
+
+For source installations, yt-dlp is installed through `requirements.txt`.
+
+Alternatively, use the application's **Engine → UPDATE yt-dlp** action to install the official Windows x64 executable.
+
+Official project: [yt-dlp](https://github.com/yt-dlp/yt-dlp)
+
+### JavaScript runtime
+
+Install either:
+
+- [Node.js 22 or newer](https://nodejs.org/)
+- [Deno](https://deno.com/)
+
+Node.js can be discovered through the system `PATH`, the application data tools directory, or the project `tools/node/` directory.
+
+Deno can be discovered through the application data tools directory or system `PATH`.
+
+Restart MBQ after installing or changing external engines.
 
 ---
 
-## 🚀 Quick start (source)
+## Installation
 
-Download the source ZIP from the project's current GitHub repository and extract
-it to a local folder. Open PowerShell in that extracted folder, then run:
+### Option 1 — Download the source ZIP
+
+1. Open the [MBQ Media Downloader repository](https://github.com/madebyquddus/mbq-media-downloader).
+2. Select **Code → Download ZIP**.
+3. Extract the archive.
+4. Open PowerShell inside the extracted project directory.
+
+### Option 2 — Clone the repository
+
+```powershell
+git clone https://github.com/madebyquddus/mbq-media-downloader.git
+cd mbq-media-downloader
+```
+
+### Install Python
+
+Install Python 3.11 or newer:
+
+https://www.python.org/downloads/
+
+Verify the installation:
+
+```powershell
+py -3 --version
+```
+
+### Create a virtual environment
 
 ```powershell
 py -3 -m venv .venv
+```
+
+### Upgrade pip
+
+```powershell
 .\.venv\Scripts\python.exe -m pip install --upgrade pip
+```
+
+### Install dependencies
+
+```powershell
 .\.venv\Scripts\python.exe -m pip install -r requirements.txt
+```
 
-# Provide FFmpeg / yt-dlp / Node (see Requirements above), then:
+After installing Python dependencies, provide FFmpeg, ffprobe, and a supported JavaScript runtime as explained in [Requirements](#requirements).
+
+---
+
+## Quick Start
+
+Once the dependencies and external tools are available, launch MBQ:
+
+```powershell
 .\.venv\Scripts\python.exe main.py
-
 ```
 
-On first launch the **Engine** page reports what it can find and what is missing.
+On first launch:
+
+1. Open the **Engine** page.
+2. Check whether yt-dlp is detected.
+3. Check whether FFmpeg and ffprobe are detected.
+4. Confirm that Node.js or Deno is available.
+5. Resolve any missing dependencies.
+
+Then return to Home, enter a media URL, and select **Analyze**.
 
 ---
 
-## 🎬 Using the app
+## Using the Application
 
-1. **Paste** one or more HTTP/HTTPS URLs on Home, then click **Analyze**. Analysis never downloads media.
-2. For a single video, quality cards show only the resolutions actually present in the source. For a playlist, entries initially load as fast flat metadata — select one and click **Analyze selected formats** to inspect that entry's real streams.
-3. Check the entries you want to download. Choose **Video** (MP4 / MKV / WebM) or **Audio** (MP3 / M4A / Opus / WAV), then click a quality card. **Download** adds the checked entries and starts the queue.
-4. The **Best Available** card chooses the best video plus best audio, or the best combined format. Resolution presets act as ceilings, not guarantees.
-5. Open **Advanced** to inspect exact format IDs, codecs, FPS, bitrate and known/estimated size. Select one format — or a video-only + audio-only pair — and click **Use selected IDs**. This applies only to the currently selected entry; other checked entries use the simple preset.
-6. **Downloads** offers queue controls, filter tabs, selection tools, "open file" / "open folder" actions, and error details. Partial files remain on disk so retries can resume.
-7. **Settings** controls subtitles, automatic captions, thumbnail/metadata/chapters, filenames, playlist folders, archive skipping, browser sessions and concurrency. Saved settings apply to *new* downloads — already-queued jobs keep their original options.
-8. **History** is searchable. Clearing it also clears duplicate detection; downloaded files stay on disk.
+### 1. Analyze a URL
 
-> **Playlist output:** `Downloads/<Playlist Name>/001 - Video Title [id].ext`, Windows-safe names throughout.
+Paste one or more HTTP/HTTPS URLs into the Home page and select **Analyze**.
+
+MBQ retrieves media information through yt-dlp without initiating a media download.
+
+### 2. Inspect available formats
+
+For individual media, the application displays quality options derived from available source streams.
+
+For playlists, entries initially load as lightweight metadata. Select an entry and use **Analyze selected formats** to inspect its available streams.
+
+### 3. Select media and quality
+
+Choose the desired output mode:
+
+- Video: MP4, MKV, or WebM.
+- Audio: MP3, M4A, Opus, or WAV.
+
+Choose a quality card and select **Download** to add the checked entries to the queue.
+
+### 4. Use Best Available
+
+The Best Available preset selects the best available video and audio combination or an available combined stream.
+
+Resolution presets are maximum-resolution limits, not guarantees that a source contains that resolution.
+
+### 5. Manage downloads
+
+The Downloads page provides queue management, filtering, progress information, and job actions.
+
+You can inspect errors, open completed files, open their containing folders, pause or resume work, and retry failed jobs.
+
+### 6. Configure settings
+
+The Settings page provides controls for:
+
+- Subtitles and automatic captions.
+- Thumbnail embedding.
+- Metadata embedding.
+- Chapter handling.
+- Output filename templates.
+- Playlist folder organization.
+- Duplicate-download skipping.
+- Browser-session authentication.
+- Download concurrency.
+- Interface theme and animation preferences.
+
+Saved settings apply to new downloads. Existing queued jobs retain their original options.
+
+### 7. Review history
+
+The History page provides a searchable local archive.
+
+Clearing history also clears the associated duplicate-detection records. It does not delete the downloaded media files.
+
+### Playlist output structure
+
+When playlist folders are enabled, output follows an organized structure:
+
+```text
+Downloads/
+└── Playlist Name/
+    ├── 001 - Video Title [id].mp4
+    ├── 002 - Video Title [id].mp4
+    └── 003 - Video Title [id].mp4
+```
+
+Filenames are sanitized for Windows compatibility.
+
 ---
 
-## 🎛 Advanced
+## Advanced Features
 
-### Exact format selection
+### Exact Format Selection
 
-The Advanced tab lists every non-DRM stream for the currently selected entry. `Use selected IDs` accepts either:
+The Advanced tab lists available non-DRM streams for the currently selected media entry.
 
-- **A single combined stream** — one ID, e.g. `22`
-- **A video-only + audio-only pair** — e.g. `137+140`, which yt-dlp will merge via FFmpeg
+Depending on the source, the interface can display:
 
-If the two IDs you pick aren't one video-only and one audio-only, the app rejects them with a clear message.
+- Format ID.
+- Video and audio codecs.
+- Frame rate.
+- Bitrate.
+- Known or estimated file size.
 
-### Advanced yt-dlp options
+You can select either:
 
-Allowlist of extra yt-dlp arguments:
+**A single combined stream**
 
+```text
+22
 ```
---limit-rate, --retries, --fragment-retries, --socket-timeout,
---concurrent-fragments, --proxy, --user-agent, --referer
+
+**A video-only and audio-only pair**
+
+```text
+137+140
 ```
 
-Everything else is blocked. Arguments are passed as an array with no shell interpolation.
+Compatible separate streams are merged using FFmpeg.
 
+The application validates exact format selections and rejects invalid combinations. Exact format selection applies to the currently selected entry; other checked entries use the selected quality preset.
 
-### Engine updates
+### Advanced yt-dlp Options
 
-Use **Engine → UPDATE yt-dlp** while no download or analysis is active. The app:
+MBQ permits a restricted set of additional yt-dlp arguments:
 
-1. Reads the latest official Windows x64 yt-dlp release from GitHub.
-2. Downloads the release asset over HTTPS.
-3. Verifies SHA-256 against the same release's manifest.
-4. Installs into `%LOCALAPPDATA%\MBQDownloader\tools\yt-dlp\` atomically.
-5. Preserves the previous engine on any failure.
+```text
+--limit-rate
+--retries
+--fragment-retries
+--socket-timeout
+--concurrent-fragments
+--proxy
+--user-agent
+--referer
+```
 
-This is checksum verification over HTTPS, **not** independent GPG signature verification.
+Other arguments are rejected.
 
-**Engine precedence** (first match wins):
+Arguments are passed as an argument array without shell interpolation. Numeric options are subject to validation.
 
-1. `%LOCALAPPDATA%\MBQDownloader\tools\yt-dlp\yt-dlp.exe`
-2. Project `tools\yt-dlp\yt-dlp.exe`
-3. Tools folder from the previous release (`TangiYTDownloader`)
-4. `PATH`
-5. Source Python module `python -m yt_dlp` (source installs only)
+### Browser-session authentication
 
-Updating `pip` does not replace a higher-priority external executable — use the Engine button for that.
+The application can optionally reuse an existing browser login session from supported browsers:
 
+- Chrome
+- Edge
+- Firefox
+- Brave
+
+This uses yt-dlp's browser-cookie functionality. The user must already have legitimate access to the requested media.
 
 ---
 
-## 🛠 Building a distributable EXE
+## Engine Management
 
-Optional. Only needed if you want to hand someone a folder they can run without Python.
+MBQ includes an Engine page for checking external dependencies and managing the standalone yt-dlp executable.
+
+### yt-dlp updater
+
+Use **Engine → UPDATE yt-dlp** when no download or analysis task is active.
+
+The updater:
+
+1. Retrieves the latest official Windows x64 release information from GitHub.
+2. Downloads the official release ZIP over HTTPS.
+3. Retrieves the corresponding SHA-256 checksum manifest.
+4. Verifies the downloaded archive against that checksum.
+5. Extracts and validates the executable.
+6. Installs it into the application's local tools directory.
+7. Preserves the previous installation if an update fails.
+
+The updater performs SHA-256 checksum verification over HTTPS. This is not independent GPG signature verification.
+
+### Engine discovery order
+
+The application searches supported locations for external tools, including:
+
+- `%LOCALAPPDATA%\MBQDownloader\tools\`
+- Project `tools/` directories.
+- System `PATH`.
+
+For yt-dlp, source installations also have a Python module fallback:
+
+```powershell
+python -m yt_dlp
+```
+
+Packaged applications do not use that Python module fallback. They require the standalone Windows yt-dlp executable.
+
+**Important:** Updating the Python yt-dlp package does not necessarily replace a higher-priority standalone executable. Use the Engine updater to update that executable.
+
+---
+
+## Data Storage
+
+MBQ stores application data locally.
+
+The default application data directory is:
+
+```text
+%LOCALAPPDATA%\MBQDownloader\
+```
+
+Typical contents include:
+
+| File or directory | Purpose |
+|---|---|
+| `settings.json` | Application and download preferences |
+| `queue.json` | Persistent download queue |
+| `history.sqlite3` | Download history and duplicate detection |
+| `mbq.log` | Application log |
+| `tools/` | Locally installed external engines |
+
+### Custom data directory
+
+A custom writable directory can be configured using the `MBQ_DATA_DIR` environment variable.
+
+Example:
+
+```powershell
+$env:MBQ_DATA_DIR = "D:\MBQData"
+```
+
+This applies to the current PowerShell session.
+
+Settings, queue information, history, and application-installed tools are stored under the selected application data directory.
+
+---
+
+## Building from Source
+
+MBQ can be packaged into a Windows folder distribution using PyInstaller.
+
+### Build prerequisites
+
+- Windows 10/11 x64.
+- Python 3.11 or newer.
+- Project dependencies installed.
+- PyInstaller installed through `requirements.txt`.
+
+### Build command
+
+From the project root:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\build.ps1
 ```
 
-Equivalent steps:
+The script checks Python and PyInstaller, verifies required project files, cleans previous build output, runs PyInstaller, and copies available supporting tools and documentation.
+
+### Alternative: direct PyInstaller command
 
 ```powershell
 .\.venv\Scripts\python.exe -m PyInstaller --noconfirm --clean MBQ.spec
-Copy-Item -LiteralPath tools -Destination 'dist\MBQ Media Downloader' -Recurse -Force
 ```
 
-The result is a **portable folder distribution** at `dist\MBQ Media Downloader\` — deliver the entire folder, including `_internal\` and any `tools\` you chose to bundle. It is not a single-file EXE and it is not an installer.
+The direct command does not perform every additional step in `build.ps1`.
 
-If you bundle third-party binaries into your distributed build, **you** become their redistributor — see [License](#-license) and `THIRD_PARTY_NOTICES.md`.
+### Build output
 
+The resulting distribution is generated at:
+
+```text
+dist/
+└── MBQ Media Downloader/
+    ├── MBQ Media Downloader.exe
+    ├── _internal/
+    ├── assets/
+    ├── LICENSE
+    ├── README.md
+    ├── THIRD_PARTY_NOTICES.md
+    └── ...
+```
+
+The entire output directory must remain together.
+
+This is a **PyInstaller onedir folder distribution**, not a single-file executable or an installer. Python does not need to be installed on the target machine.
+
+### Build warning
+
+The included `build.ps1` removes existing `build/` and `dist/` directories before rebuilding.
+
+Back up anything important in those directories before running the script.
+
+### External runtime components
+
+The default source repository does not contain third-party runtime executables.
+
+The build does not automatically download or bundle FFmpeg, ffprobe, Node.js, Deno, or yt-dlp. These remain external and must be provided separately.
+
+If third-party binaries are placed in `tools/` before building, the build script can copy that directory into the distribution. Anyone redistributing those binaries must satisfy the applicable upstream licensing obligations.
+
+See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 
 ---
 
-## 🧪 Testing
+## Testing and Verification
+
+### Compile check
 
 ```powershell
 .\.venv\Scripts\python.exe -m compileall -q main.py app tests
+```
+
+### Run automated tests
+
+```powershell
 .\.venv\Scripts\python.exe -m unittest discover -s tests -v
 ```
 
-- **Core tests** cover the custom-argument allowlist, path/template safety, quality derivation, URL validation, playlist paths, and persistent archive/settings.
-- **Integration tests** run the real extraction → download → FFmpeg pipeline against locally generated media (no public network needed). They **skip** when FFmpeg / ffprobe are not on the machine.
-- **Updater tests** cover verified install, checksum-mismatch preservation, and zip-slip traversal rejection.
+### Test coverage
+
+The repository includes tests covering:
+
+- Custom yt-dlp argument restrictions.
+- URL validation.
+- Filename and output-template safety.
+- Windows reserved filenames.
+- Available quality derivation.
+- Best Available selection.
+- Playlist output paths.
+- Persistent settings and history.
+- Download and FFmpeg integration.
+- Video and audio output formats.
+- DASH stream merging.
+- Download cancellation.
+- GUI queue and history integration.
+- yt-dlp updater installation.
+- Checksum mismatch handling.
+- ZIP archive path traversal rejection.
+
+Integration tests generate local media and use a local HTTP server. They do not require public media websites. Tests requiring FFmpeg or ffprobe are skipped when those tools are unavailable.
+
+### Release verification status
+
+Automated tests and packaging checks should be run against the exact source snapshot intended for release.
+
+The historical `VERIFICATION.md` file records earlier development checks; it is not evidence that the current source snapshot has passed a fresh release verification.
+
+Do not treat a successful application launch as proof that every website, engine update, download format, or packaged deployment scenario has been verified.
 
 ---
 
-## 📁 Project layout
+## Project Structure
 
+```text
+MBQ Media Downloader/
+│
+├── main.py
+├── MBQ.spec
+├── build.ps1
+├── requirements.txt
+├── README.md
+├── LICENSE
+├── CHANGELOG.md
+├── THIRD_PARTY_NOTICES.md
+├── VERIFICATION.md
+│
+├── app/
+│   ├── core/
+│   │   ├── engine.py
+│   │   ├── options.py
+│   │   └── storage.py
+│   │
+│   ├── ui/
+│   │   ├── window.py
+│   │   ├── neon.py
+│   │   ├── neon_theme.py
+│   │   ├── mbq_core.py
+│   │   └── ui_config.py
+│   │
+│   └── workers/
+│       └── tasks.py
+│
+├── assets/
+│   └── icons/
+│
+├── docs/
+│   └── screenshots/
+│
+├── devtools/
+│
+├── tools/
+│   ├── ffmpeg/
+│   ├── node/
+│   └── yt-dlp/
+│
+└── tests/
+    ├── test_core.py
+    ├── test_integration.py
+    ├── test_mbq.py
+    └── test_updater.py
 ```
-main.py                  application entry point
-app/ui/window.py         native GUI, queue coordinator, settings forms
-app/ui/neon.py           painted cards, hover/press animations, frameless shell
-app/ui/neon_theme.py     Dark / Light token palettes and QSS
-app/ui/mbq_core.py       animated signal core (Home)
-app/ui/ui_config.py      UI metrics
-app/core/engine.py       tool discovery, version checks, verified updater
-app/core/options.py      format selection, argument allowlist, safe paths, error mapping
-app/core/storage.py      SQLite history/archive, atomic JSON settings
-app/workers/tasks.py     threaded subprocess workers, cancellation, pause/resume
-devtools/                UI Studio dev tooling (not required to run the app)
-tools/                   placeholders for user-provided ffmpeg / node / yt-dlp
-tests/                   security, persistence, integration verification
-MBQ.spec                 PyInstaller configuration
-build.ps1                reproducible folder-distribution build
+
+### Important directories
+
+| Directory | Purpose |
+|---|---|
+| `app/core/` | Engine discovery, download options, and persistent storage |
+| `app/ui/` | Native desktop interface and themes |
+| `app/workers/` | Background extraction and download processes |
+| `assets/` | Application icons and resources |
+| `docs/` | Documentation and screenshots |
+| `devtools/` | Development-only interface tools |
+| `tools/` | Locations for user-provided external engines |
+| `tests/` | Automated test suite |
+
+---
+
+## Troubleshooting
+
+<details>
+<summary><strong>Engine page reports missing tools</strong></summary>
+
+Open the Engine page and inspect the detected dependencies.
+
+Provide both FFmpeg and ffprobe using the local installation option or a supported engine location.
+
+For full YouTube extraction support, install Node.js 22+ or Deno and ensure it is discoverable.
+
+Restart MBQ after changing external tools.
+
+</details>
+
+<details>
+<summary><strong>YouTube signature or nsig errors</strong></summary>
+
+These errors can result from an outdated yt-dlp version, a missing JavaScript runtime, or changes made by the website.
+
+Try:
+
+1. Open Engine.
+2. Select UPDATE yt-dlp.
+3. Verify Node.js or Deno availability.
+4. Restart MBQ.
+5. Analyze the URL again.
+
+Website changes, authentication restrictions, and rate limits can still affect extraction.
+
+</details>
+
+<details>
+<summary><strong>Browser cookies or authenticated access fail</strong></summary>
+
+MBQ can optionally reuse an existing supported browser login session.
+
+Browser encryption, a locked cookie database, or an unsupported browser configuration may prevent extraction.
+
+Try closing the browser before retrying. You must already have authorized access to the requested media.
+
+</details>
+
+<details>
+<summary><strong>Format errors or unsupported codecs</strong></summary>
+
+MP4 and WebM do not support every possible codec combination.
+
+Try MKV or select a compatible stream manually in Advanced.
+
+Best Available prioritizes the best available video/audio combination and uses remuxing where possible rather than re-encoding.
+
+WAV conversion can produce very large files.
+
+Thumbnail, subtitle, and metadata embedding also depend on the selected container and source support.
+
+</details>
+
+<details>
+<summary><strong>Media is unavailable or restricted</strong></summary>
+
+- Analyze the selected formats again if a format is unavailable.
+- Verify access using your own authorized account for private or restricted media.
+- Check your connection for network errors.
+- Wait before retrying if the website applies rate limits.
+- Check the application log if no output file is reported.
+
+Media may have been removed, restricted, or made unavailable by the source platform.
+
+</details>
+
+<details>
+<summary><strong>Application does not launch</strong></summary>
+
+For source installations, verify the virtual environment and project dependencies.
+
+Try launching directly:
+
+```powershell
+.\.venv\Scripts\python.exe main.py
 ```
 
+For packaged installations, keep the executable together with its `_internal` directory and the rest of the distribution.
+
+</details>
+
+Logs and error details are stored locally and may contain URLs or filesystem paths. Review them before sharing.
 
 ---
 
-## 📂 Data locations
+## Security and Privacy
 
-User data lives in `%LOCALAPPDATA%\MBQDownloader\`:
+MBQ is designed around local application storage and explicit download actions.
 
-- `settings.json` — UI + download defaults
-- `queue.json` — pending and recent download jobs
-- `history.sqlite3` — completed-download archive and skip index
-- `mbq.log` — rotating technical log (4 MB × 3 backups)
-- `tools\` — engines installed via the Engine page
+Security-related implementation details include:
 
-For portable or test use, set `MBQ_DATA_DIR` to any writable directory.
+- Additional yt-dlp arguments are restricted by an explicit allowlist.
+- Arguments are passed without shell interpolation.
+- yt-dlp configuration files and plugin directories are disabled for application engine invocations.
+- Output paths and filename templates are subject to validation.
+- File-opening actions are restricted to supported media file extensions.
+- Downloaded files are not executed automatically.
+- Application settings, queue information, and history are stored locally.
+- No application-specific cloud storage service is used for download history or settings.
 
+Network requests are still required for media extraction, website access, and official engine updates.
 
----
+The application does not circumvent DRM, paywalls, or access controls.
 
-## 🔧 Troubleshooting
-
-<details>
-<summary><b>Engine shows missing tools</b></summary>
-
-Open the Engine page in-app. Download Windows FFmpeg builds from
-https://ffmpeg.org/download.html and point **Install local FFmpeg files** at the
-folder containing `ffmpeg.exe` and `ffprobe.exe`. Full YouTube support also
-requires a supported JavaScript runtime — install Deno or Node 22+ and restart
-the app.
-</details>
-
-<details>
-<summary><b>YouTube extractor errors, signature failures, nsig</b></summary>
-
-yt-dlp is outdated, or the JavaScript runtime is missing. Click **Engine → UPDATE
-yt-dlp** and confirm Node/Deno is on `PATH` (or in `tools\node`). Website changes,
-rate limits and login restrictions can still affect extraction.
-</details>
-
-<details>
-<summary><b>Browser cookies / authenticated access</b></summary>
-
-**Use existing browser login session** optionally reads Chrome, Edge, Firefox or
-Brave cookies with yt-dlp. No passwords are collected; cookies are never uploaded
-to a separate service — normal requests to the target site use the session
-locally. Windows browser encryption or a locked cookie database may prevent
-extraction — try closing the browser or using Firefox. Access must already be
-authorized.
-</details>
-
-<details>
-<summary><b>Format errors, unsupported codecs, WAV size</b></summary>
-
-MP4/WebM cannot contain every codec. Presets prefer compatible streams when
-capped; **Best Available** preserves the highest quality and remuxes without
-re-encoding. If a container rejects the codec, try MKV or pick an exact
-compatible format in **Advanced**. WAV conversion produces very large files.
-Thumbnail / subtitle embedding depends on container and source support.
-</details>
-
-<details>
-<summary><b>Unavailable / private / network errors</b></summary>
-
-- **Unavailable formats** → Analyze selected formats again.
-- **Private / restricted** → verify access through the provider with your own account.
-- **Network / rate limit / timeout** → wait and retry.
-- **"Engine finished but did not report an output file"** → check the log; usually an FFmpeg codec issue.
-
-Logs and error details are local and may contain URLs or filesystem paths — review before sharing.
-</details>
-
-<details>
-<summary><b>Security notes</b></summary>
-
-- Custom arguments use an explicit allowlist and argument arrays with **no shell**.
-- Config files, plugins, exec hooks and arbitrary output paths are disabled.
-- Downloads intentionally require both FFmpeg *and* ffprobe, even for formats that might not need processing.
-- Output files open only through an explicit **Open file** action, restricted to known media extensions.
-- No downloaded files run automatically.
-
-The app does **not** circumvent DRM, paywalls or access controls. Use it only for media you may download.
-</details>
-
+Only download media you have permission to access and save. Users are responsible for complying with applicable copyright laws and website terms.
 
 ---
 
-## 🤝 Contributing
+## Contributing to MBQ
 
-Contributions are welcome — bug reports, documentation fixes, or code.
+Contributions to MBQ Media Downloader are welcome.
 
-Before opening a PR:
+Useful contributions include:
 
-- Run `python -m unittest discover -s tests -v` locally with FFmpeg and yt-dlp installed.
-- **Do not commit binaries.** `tools/` placeholders must stay empty; `.gitignore` will block them, but please don't fight it.
-- Keep the current design language: minimal dependencies, native Qt painting, no web engine.
-- For non-trivial changes, open an issue first so we can align on scope.
+- Bug reports and reproducible issue descriptions.
+- Documentation improvements.
+- UI and accessibility improvements.
+- Performance and reliability improvements.
+- Automated test coverage.
+- Compatibility fixes.
+- Security improvements.
+
+### Contribution workflow
+
+1. Review the existing issues before opening a new one.
+2. For substantial changes, open an issue to discuss the proposed scope.
+3. Fork the MBQ repository.
+4. Create a focused feature branch.
+5. Make your changes.
+6. Run compilation checks and the automated test suite.
+7. Verify relevant behavior on Windows.
+8. Submit a pull request describing the changes and test results.
+
+### Development standards
+
+- Preserve the native PySide6 architecture.
+- Keep external engines replaceable.
+- Avoid committing compiled binaries or third-party runtime executables.
+- Do not introduce unnecessary dependencies.
+- Include tests for behavior changes where practical.
+- Do not commit credentials, private URLs, personal data, or local application databases.
+
+Run the test suite:
+
+```powershell
+.\.venv\Scripts\python.exe -m unittest discover -s tests -v
+```
+
+The `tools/` directories in the source repository should contain only their placeholders and documentation files.
+
+**Repository:** [madebyquddus/mbq-media-downloader](https://github.com/madebyquddus/mbq-media-downloader)
 
 ---
 
-## 🗺 Roadmap
+## Upstream Projects and Contributions
 
-- [ ] Inline unit coverage for `available_qualities()` on real extractor fixtures
-- [ ] Optional auto-resume of interrupted jobs on launch
-- [ ] Add "Retry / Cancel / Clear completed" buttons to the Downloads queue
-- [ ] Additional screenshots (Light theme, queue, advanced, engine)
-- [ ] GitHub Actions workflow for tests on Windows
+MBQ relies on established open-source projects for its runtime, interface, extraction, media processing, and packaging.
 
-Have an idea? Open an issue.
+These projects are independently maintained. MBQ Media Downloader is not affiliated with, endorsed by, or maintained by their upstream teams.
 
+If you discover a bug in an upstream component, need a feature, or want to improve the software MBQ depends on, contribute to the relevant upstream project rather than assuming the issue belongs in MBQ's source code.
+
+| Project | Role in MBQ | Upstream repository |
+|---|---|---|
+| Python | Application language and runtime | [python/cpython](https://github.com/python/cpython) |
+| PySide6 | Python bindings for Qt and desktop UI | [pyside/pyside-setup](https://github.com/pyside/pyside-setup) |
+| yt-dlp | Media extraction and downloading | [yt-dlp/yt-dlp](https://github.com/yt-dlp/yt-dlp) |
+| FFmpeg | Media processing and stream merging | [FFmpeg/FFmpeg](https://github.com/FFmpeg/FFmpeg) |
+| Node.js | JavaScript runtime option | [nodejs/node](https://github.com/nodejs/node) |
+| Deno | JavaScript runtime option | [denoland/deno](https://github.com/denoland/deno) |
+| PyInstaller | Windows application packaging | [pyinstaller/pyinstaller](https://github.com/pyinstaller/pyinstaller) |
+
+### How to contribute upstream
+
+For each project:
+
+1. Read its contribution guidelines and license.
+2. Search existing issues and pull requests.
+3. Reproduce the issue using the upstream component independently where possible.
+4. Open an issue with relevant logs, versions, and reproduction steps.
+5. Fork the upstream repository and create a focused branch.
+6. Follow its testing and code-review requirements.
+7. Submit a pull request to that project's official repository.
+
+Useful upstream resources:
+
+- [Python documentation](https://docs.python.org/3/)
+- [PySide6 documentation](https://doc.qt.io/qtforpython-6/)
+- [yt-dlp documentation](https://github.com/yt-dlp/yt-dlp#readme)
+- [FFmpeg documentation](https://ffmpeg.org/documentation.html)
+- [Node.js documentation](https://nodejs.org/docs/latest/api/)
+- [Deno documentation](https://docs.deno.com/)
+- [PyInstaller documentation](https://pyinstaller.org/en/stable/)
+
+### Why upstream contributions matter
+
+Improvements to yt-dlp extractors, FFmpeg processing, Python, Qt bindings, and packaging tools can benefit many applications beyond MBQ.
+
+Keeping upstream contributions separate also makes it easier to identify whether a problem belongs to MBQ's implementation or to one of its external dependencies.
+
+For licensing and redistribution details, see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 
 ---
 
-## 📄 License
+## Roadmap
 
-**MBQ Media Downloader source** is released under the [MIT License](LICENSE).
+Planned improvements:
 
-**Third-party tools you install yourself** — FFmpeg, ffprobe, yt-dlp, Node.js,
-Deno, PySide6 — retain their own licenses. In particular, common Windows FFmpeg
-builds (e.g. gyan.dev) are GPLv3, and anyone who **redistributes** those binaries
-inherits GPLv3 obligations (corresponding source, license notices, etc.).
-This repository does not bundle them, so the MIT license covers only the Python
-source here. See [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md) for details.
+- [ ] Additional unit coverage for `available_qualities()` using real extractor fixtures.
+- [ ] Optional automatic resume of interrupted jobs on application launch.
+- [ ] Additional queue actions and workflow refinements.
+- [ ] More interface screenshots, including Light theme, Downloads, Advanced, and Engine.
+- [ ] GitHub Actions workflow for automated Windows testing.
+- [ ] Continued improvements to reliability, usability, and compatibility.
+
+Roadmap items are planned improvements, not existing features or delivery guarantees.
+
+Have an idea or found a problem? Open a [GitHub issue](https://github.com/madebyquddus/mbq-media-downloader/issues).
 
 ---
 
-<p align="center">
-Made with ❤️ by <a href="https://github.com/madebyquddus">@madebyquddus</a>
-</p>
+## License and Acknowledgements
+
+MBQ Media Downloader application source code is released under the [MIT License](LICENSE).
+
+Copyright (c) 2026 @madebyquddus.
+
+Third-party components retain their respective licenses. These include:
+
+- Python Software Foundation License.
+- PySide6 and Qt licensing terms.
+- yt-dlp's Unlicense and applicable third-party component licenses.
+- FFmpeg licensing, which depends on the selected build and configuration.
+- Node.js and its included third-party licenses.
+- Deno MIT License.
+- PyInstaller GPLv2-or-later license and bootloader exception.
+
+The source repository does not bundle third-party runtime binaries by default.
+
+**Important redistribution notice:** A PyInstaller folder distribution includes PySide6/Qt runtime libraries. Redistributing a packaged application therefore requires attention to the applicable Qt/PySide6 licensing obligations, including LGPL requirements. FFmpeg builds may also carry GPL obligations. Verify the exact licenses and required notices for every binary you distribute.
+
+See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) before redistributing packaged builds or external binaries.
+
+---
+
+<div align="center">
+
+**Made with ❤️ by [@madebyquddus](https://github.com/madebyquddus)**
+
+[MBQ Media Downloader Repository](https://github.com/madebyquddus/mbq-media-downloader)
+
+</div>

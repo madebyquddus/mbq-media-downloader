@@ -57,23 +57,15 @@ class BrandTests(unittest.TestCase):
             logging.shutdown()
             logging.getLogger().handlers.clear()
 
-    def test_legacy_history_and_settings_migration(self):
+    def test_mbq_data_directory_initialization(self):
         with test_directory() as root, patch.dict(os.environ, {
-                'LOCALAPPDATA':root, 'MBQ_DATA_DIR':'', 'TANGI_DATA_DIR':''}):
-            legacy = Store(Path(root) / 'TangiYTDownloader')
-            legacy.save_settings({'folder':str(Path(root) / 'custom')})
-            legacy.record({'info':{'id':'saved','extractor_key':'Generic'},
-                'title':'Saved download','url':'https://example.test/saved',
-                'quality':'720p','status':'Completed'})
-            (legacy.root / 'queue.json').write_text('[]', 'utf-8')
-            legacy.db.close()
-            migrated = Store(data_dir())
-            self.assertEqual(migrated.settings['folder'], str(Path(root) / 'custom'))
-            self.assertEqual(migrated.history()[0][0], 'Saved download')
-            self.assertEqual((migrated.root / 'queue.json').read_text('utf-8'), '[]')
-            self.assertTrue((Path(root) / 'TangiYTDownloader' / 'history.sqlite3').exists())
-            migrated.db.close()
-
+                'LOCALAPPDATA':root, 'MBQ_DATA_DIR':''}):
+            path = data_dir()
+            self.assertEqual(path, Path(root) / 'MBQDownloader')
+            self.assertTrue(path.is_dir())
+            store = Store(path)
+            self.assertTrue((path / 'history.sqlite3').exists())
+            store.db.close()
     def test_theme_persistence_and_download_footer_with_many_cards(self):
         with test_directory() as root, patch.dict(os.environ, {'MBQ_DATA_DIR':root}):
             window = None
