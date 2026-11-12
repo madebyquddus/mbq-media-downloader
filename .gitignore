@@ -1,0 +1,105 @@
+# Python environments
+.venv/
+venv/
+env/
+__pycache__/
+*.py[cod]
+*$py.class$
+
+# Python testing and coverage
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.tox/
+.nox/
+.coverage
+.coverage.*
+htmlcov/
+
+# Build and distribution artifacts
+build/
+dist/
+installer-output/
+*.egg-info/
+.eggs/
+wheels/
+pip-wheel-metadata/
+
+# Compiled binaries and packages
+*.exe
+*.dll
+*.pyd
+*.so
+*.dylib
+*.msi
+*.msix
+*.appx
+*.whl
+
+# Logs and temporary files
+*.log
+*.log.*
+*.tmp
+*.temp
+*.swp
+*.bak
+*.old
+*.orig
+
+# Local environment and credentials
+.env
+.env.*
+!.env.example
+!.env.template
+secrets/
+credentials/
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+*.keystore
+
+# Local databases and application state
+*.sqlite
+*.sqlite3
+*.db
+*.db-journal
+settings.json
+queue.json
+history.sqlite3
+smoke-test.json
+smoke-test.png
+
+# Local editor and operating-system files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Node and package-manager caches
+node_modules/
+.npm/
+.yarn/
+.pnpm-store/
+
+# Bundled runtime binaries — users install their own
+tools/ffmpeg/*
+!tools/ffmpeg/README.txt
+!tools/ffmpeg/.gitkeep
+
+tools/node/*
+!tools/node/README.txt
+!tools/node/.gitkeep
+
+tools/yt-dlp/*
+!tools/yt-dlp/README.txt
+!tools/yt-dlp/.gitkeep
+
+# Devtools generated state
+devtools/ui_components.json
+devtools/ui_scene.json
+devtools/selected_component.json
+devtools/ui_config.json
+devtools/live_preview.png

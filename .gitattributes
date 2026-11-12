@@ -1,0 +1,18 @@
+# Normalize line endings
+* text=auto eol=lf
+
+# Windows scripts keep CRLF so they run natively in PowerShell
+*.ps1  text eol=crlf
+*.bat  text eol=crlf
+*.cmd  text eol=crlf
+*.iss  text eol=crlf
+
+# Binary files — never touch
+*.png  binary
+*.ico  binary
+*.jpg  binary
+*.jpeg binary
+*.gif  binary
+*.zip  binary
+*.exe  binary
+*.dll  binary

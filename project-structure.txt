@@ -1,0 +1,73 @@
+# Source repository layout — MBQ Media Downloader 1.2
+#
+# This tree shows source files tracked in the repository. It does NOT
+# include third-party binaries: ffmpeg.exe, ffprobe.exe, node.exe and
+# yt-dlp.exe are installed by the user per README (Requirements section).
+# Build output (dist/, build/, installer-output/) is git-ignored.
+
+app
+app\core
+app\ui
+app\workers
+assets
+assets\icons
+devtools
+tests
+tools
+tools\ffmpeg
+tools\node
+tools\yt-dlp
+.gitignore
+build.ps1
+CHANGELOG.md
+LICENSE
+main.py
+MBQ.spec
+project-structure.txt
+README.md
+requirements.txt
+THIRD_PARTY_NOTICES.md
+VERIFICATION.md
+app\__init__.py
+app\core\engine.py
+app\core\options.py
+app\core\storage.py
+app\core\__init__.py
+app\ui\icons.py
+app\ui\mbq_core.py
+app\ui\neon.py
+app\ui\neon_theme.py
+app\ui\ui_config.py
+app\ui\window.py
+app\ui\__init__.py
+app\workers\tasks.py
+app\workers\__init__.py
+assets\icons\mbq.ico
+assets\icons\mbq.png
+assets\icons\mbq_sidebar_icon.png
+assets\windows-version.txt
+devtools\__init__.py
+devtools\launch_ui_studio.bat
+devtools\ui_runtime.py
+devtools\ui_studio.py
+tests\test_core.py
+tests\test_integration.py
+tests\test_mbq.py
+tests\test_updater.py
+tools\ffmpeg\.gitkeep
+tools\ffmpeg\README.txt
+tools\node\.gitkeep
+tools\node\README.txt
+tools\yt-dlp\.gitkeep
+tools\yt-dlp\README.txt
+
+# --- Installed by the user, not tracked in Git ---
+# tools\ffmpeg\ffmpeg.exe
+# tools\ffmpeg\ffprobe.exe
+# tools\node\node.exe  (or deno.exe)
+# tools\yt-dlp\yt-dlp.exe
+
+# --- Generated at build time, not tracked in Git ---
+# build\
+# dist\
+# installer-output\
