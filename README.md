@@ -1,11 +1,16 @@
+
+<div align="center">
+
 # MBQ Media Downloader
+
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 ![Python](https://img.shields.io/badge/Python-3.11%2B-3776AB?logo=python&logoColor=white)
 ![PySide6](https://img.shields.io/badge/PySide6-6.7%2B-41CD52?logo=qt&logoColor=white)
 ![Platform](https://img.shields.io/badge/Platform-Windows%2010%2F11%20x64-0078D6?logo=windows&logoColor=white)
 ![Status](https://img.shields.io/badge/Status-active-brightgreen)
 
-**A cinematic Windows desktop media downloader.**  
+**A cinematic Windows desktop media downloader.**
+
 Resolve a link, inspect the real source streams, pick your quality, and keep the
 whole pipeline local. Python + PySide6 for the UI, yt-dlp for extraction, FFmpeg
 for merging and conversion.
@@ -15,6 +20,9 @@ for merging and conversion.
 > See [Requirements](#-requirements-you-provide-the-media-tools).
 
 Made with ❤️ by [@madebyquddus](https://github.com/madebyquddus).
+
+</div>
+
 
 ---
 
